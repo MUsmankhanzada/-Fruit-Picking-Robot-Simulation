@@ -1,5 +1,5 @@
 # Setup Instructions
----
+## 5) Paraphrase Generation:
 ### 1) Install extra packages
 ```bash
 pip install optuna
