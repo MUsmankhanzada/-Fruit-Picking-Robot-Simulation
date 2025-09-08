@@ -375,6 +375,15 @@ The objective of this experiment is to find the optimal combination of hyperpara
   - **rl_batch_size**: 4
 - **Best Penalized BLEU Score**: 30.95
 
+<img width="1234" height="608" alt="image" src="https://github.com/user-attachments/assets/0979a4a2-4756-4cdd-a37c-80323bcee2d5" />
+
+
+
+
+
+
+
+
 
 ## Results 
 Summarize all the results of your experiments in tables:
