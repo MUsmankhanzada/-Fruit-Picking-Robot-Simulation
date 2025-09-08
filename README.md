@@ -270,6 +270,76 @@ After this improvement in the baseline model, we observed a significant performa
 - **Dev Penalized BLEU**: 26.214
 - **Dev Penalized BLEU**: 26.214
 
+#### 2. **SCST with Penalized BLEU Reward**
+
+**Task**: Paraphrase Generation  
+**Model**: BART + SCST (Self-Critical Sequence Training)  
+**Method**: Reinforcement Learning with Penalized BLEU Reward  
+**Hyperparameters**:  
+- RL Epochs: 5  
+- Learning Rate: 2e-6  
+- Lambda RL: 0.3 (mixing with MLE)  
+- Batch Size: 8  
+
+**Expectations**:  
+We expect SCST to improve the model's ability to generate paraphrases by aligning training directly with the evaluation metric (penalized BLEU). SCST should help the model explore a wider range of paraphrases and discourage overfitting to the training data. By directly optimizing penalized BLEU, the model can focus on generating more diverse and faithful paraphrases.
+
+**Changes Compared to Previous Model**:  
+- Introduction of reinforcement learning for fine-tuning after initial MLE training.
+- Reward function: Penalized BLEU score with direct feedback from a comparison between greedy decoding and sampled outputs. This incentivizes better exploration of paraphrasing possibilities.
+- Introduced **smoothing by BLEU** (`effective_order=True`) to reduce length and low-count artifacts in BLEU score computation, improving the robustness of evaluation.
+
+**Evaluation Metrics**:  
+- **Dev Penalized BLEU**  
+- **Sampled vs. Greedy Rewards** (Evaluation of exploration vs. exploitation)
+
+#### 3. **Quality-Guided Reward with Optional Weights**
+
+**Task**: Paraphrase Generation  
+**Model**: BART + SCST with Quality-Guided Reward  
+**Method**: Reinforcement Learning with Quality-Guided Reward (Semantic, Syntactic, Lexical)  
+**Hyperparameters**:  
+- **Quality Weights**: "sem syn lex" (set via command-line arguments)  
+- **RL Epochs**: 5  
+- **Learning Rate**: 2e-6  
+- **Lambda RL**: 0.3  
+- **Batch Size**: 8  
+
+**Expectations**:  
+By introducing explicit control over semantic, syntactic, and lexical variations in the paraphrase generation, we anticipate the model will produce more diverse and semantically faithful paraphrases. This improvement is expected to address areas where the standard SCST-based model might struggle, particularly in maintaining a balance between adequacy and diversity.
+
+**Changes Compared to Previous Model**:  
+- **Additional control** for generation quality via user-defined weights on semantic, syntactic, and lexical factors.
+- This allows the user to fine-tune the importance of different aspects of paraphrase generation, providing a more flexible approach to handling quality.
+
+**Evaluation Metrics**:  
+- **Dev Penalized BLEU**  
+- **Quality Evaluation** (Semantic, Syntactic, Lexical)
+
+#### 4. **Hyperparameter Optimization (HPO) with Optuna**
+
+**Task**: Hyperparameter Tuning for SCST  
+**Method**: Hyperparameter Optimization using Optuna with TPE (Tree-structured Parzen Estimator)  
+**Hyperparameters to Optimize**:  
+- **rl_lr** (learning rate for RL)  
+- **lambda_rl** (weight between RL and MLE)  
+- **rl_max_len** (maximum sequence length)  
+- **rl_batch_size** (batch size)  
+
+**Expectations**:  
+The objective of this experiment is to find the optimal combination of hyperparameters that maximizes the penalized BLEU score on the development set. By doing so, we aim to improve model performance and training efficiency by identifying the best settings for reinforcement learning-related hyperparameters.
+
+**Changes Compared to Previous Model**:  
+- Introduction of an **automatic hyperparameter search** with Optuna, enabling the identification of the best RL-related hyperparameters without requiring manual tuning.
+- This process aims to streamline the search for the most effective settings for RL fine-tuning.
+
+**Evaluation Metrics**:  
+- **Dev Penalized BLEU**  
+- **Model performance** based on the best hyperparameters identified through the HPO process.
+
+
+
+
 ## Results 
 Summarize all the results of your experiments in tables:
 
