@@ -107,6 +107,8 @@ python bart_generation.py \
 
 ```
 # Methodology
+
+This task focuses on improving paraphrase generation performance using a customized BART architecture. Our primary goal is to explore, implement, and evaluate various training strategies and reward functions within a unified and extensible pipeline that supports both baseline and advanced methods via configurable command-line arguments. The overarching methodology is to systematically extend the standard BART model into a flexible research platform for paraphrase generation tasks, incorporating reinforcement learning-based fine-tuning, quality-guided rewards, and hyperparameter optimization. Through this approach, we aim to enhance the diversity and semantic fidelity of generated paraphrases while maintaining alignment with evaluation metrics such as penalized BLEU.
 ## Problem & Objective
 
 We tackle **paraphrase generation** with the goal of producing fluent outputs that **preserve meaning** while **discouraging copying** from the source. Training is aligned with evaluation using a **penalized BLEU** objective, used both as the RL reward and for dev model selection:
