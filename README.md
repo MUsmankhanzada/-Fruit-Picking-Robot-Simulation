@@ -112,7 +112,7 @@ python bart_generation.py \
 We tackle **paraphrase generation** with the goal of producing fluent outputs that **preserve meaning** while **discouraging copying** from the source. Training is aligned with evaluation using a **penalized BLEU** objective, used both as the RL reward and for dev model selection:
 
 $$
-R(\text{ref}, \text{inp}, \text{hyp}) \;=\; \text{BLEU}(\text{ref}, \text{hyp}) \times \frac{100 - \text{BLEU}(\text{inp}, \text{hyp})}{52}
+R(\text{ref}, \text{inp}, \text{hyp}) \;= \text{BLEU}(\text{ref}, \text{hyp}) \times \frac{100 - \text{BLEU}(\text{inp}, \text{hyp})}{52}
 $$
 
 We compute BLEU with **SacreBLEU** (`effective_order=True`) to mitigate length and low-count artifacts.
