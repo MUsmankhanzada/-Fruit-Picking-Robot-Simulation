@@ -2,6 +2,8 @@
 -   **Group name:** The Tokenizers
     
 -   **Group code:** DNLP G16
+
+-   **Group repository:** https://github.com/bilalahmed0060/deep-nlp-BERTified
     
 -   **Tutor responsible:** 	Frederik Hennecke
     
@@ -10,7 +12,19 @@
 -   **Group members:** 
   
 # Setup Instructions
- Follow `setup.sh` to properly setup a conda environment and install dependencies.
+### Initial Setup
+
+1. Clone the repository:
+```bash
+git clone https://github.com/bilalahmed0060/deep-nlp-BERTified.git
+cd deep-nlp-BERTified/
+```
+2. Run the GWDG setup script:
+```bash
+./setup_gwdg.sh
+conda activate dnlp
+```
+ 
 ## 5) Paraphrase Generation:
 ### 1) Install extra packages
 ```bash
@@ -175,15 +189,16 @@ For example, you could analyze different questions with those plots like:
 
 ## Members Contribution 
 
-**Usman Khanzada:** Implemented the paraphrase generation baseline task using BART and then introduced improvements to enhance its performance. Documented everything related to paraphrase generation in Readme.
-**Member 2:**
-**Member 2:**
-**Member 2:**
+**Usman Khanzada:** Implemented the paraphrase generation baseline task using BART and then introduced improvements to enhance its performance, also managed group organization
+
 **Member 2:**
 
-.
+**Member 2:**
 
-We should be able to understand each member's contribution within 5 minutes. 
+**Member 2:**
+
+**Member 2:**
+ 
 
 # AI-Usage Card
 Artificial Intelligence (AI) aided the development of this project. Please add a link to your AI-Usage card [here](https://ai-cards.org/).
