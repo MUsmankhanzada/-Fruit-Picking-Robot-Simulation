@@ -465,4 +465,6 @@ For example, you could analyze different questions with those plots like:
 
 # AI-Usage Card
 Artificial Intelligence (AI) aided the development of this project. Please add a link to your AI-Usage card [here](https://ai-cards.org/).
+
+Rewriting my own ideas professionally and formally. Also to avoid any grammatical mistake.
         
