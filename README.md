@@ -107,9 +107,18 @@ python bart_generation.py \
 
 ```
 # Methodology
-In this section explain what and how you did your project. 
+## Problem & Objective
 
-If you are unsure how this is done, check any research paper. They all describe their methods/processes. Describe briefly the ideas that you implemented to improve the model. Make sure to indicate how are you using existing ideas and extending them. We should be able to understand your project's contribution.
+We tackle **paraphrase generation** with the goal of producing fluent outputs that **preserve meaning** while **discouraging copying** from the source. Training is aligned with evaluation using a **penalized BLEU** objective, used both as the RL reward and for dev model selection:
+
+\[
+R(\text{ref}, \text{inp}, \text{hyp}) \;=\; \text{BLEU}(\text{ref}, \text{hyp}) \times \frac{100 - \text{BLEU}(\text{inp}, \text{hyp})}{52}
+\]
+
+We compute BLEU with **SacreBLEU** (`effective_order=True`) to mitigate length and low-count artifacts.
+
+
+
 
 # Experiments
 Keep track of your experiments here. What are the experiments? Which tasks and models are you considering?
