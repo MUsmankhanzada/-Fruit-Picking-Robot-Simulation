@@ -59,7 +59,7 @@ Fine-tunes with self-critical sequence training using the penalized BLEU reward.
 ```bash
 python bart_generation.py \
   --use_gpu \
-  --use_rl --rl_epochs 6 \
+  --use_rl --rl_epochs 5 \
   --rl_lr 2e-6 --rl_lambda 0.3 --rl_batch_size 8 --rl_max_len 50 \
   --seed 11711
 ```
@@ -79,8 +79,8 @@ Runs Optuna to tune RL hyperparameters on the dev penalized BLEU, then applies t
 python bart_generation.py \
   --use_gpu \
   --do_supervised --supervised_epochs 8 \
-  --use_rl --rl_epochs 6 \
-  --hpo --hpo_trials 20 --hpo_rl_epochs 1 \
+  --use_rl --rl_epochs 5 \
+  --hpo --hpo_trials 20 --hpo_rl_epochs 2 \
   --seed 11711
 ```
 ### 4) CLI quick reference
