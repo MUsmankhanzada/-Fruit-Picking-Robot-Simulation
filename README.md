@@ -265,12 +265,18 @@ Initially, we performed some tweaking to the `transform` function for the baseli
 - Introduced padding masking to ensure that padded tokens are excluded from loss calculations, thus improving training efficiency and reducing noise.
 
 **Results**:  
-After this improvement in the baseline model, we observed a significant performance increase, achieving a **26.214 penalized BLEU score** on the development dataset, which reflects a reasonable starting point for paraphrase generation.
+After this improvement in the baseline model, we observed a significant performance increase, achieving a **26.21 penalized BLEU score** on the development dataset, which reflects a reasonable starting point for paraphrase generation.
 
-**Evaluation Metrics**:  
-- **Dev Penalized BLEU**: 26.214
-- **Dev Penalized BLEU**: 26.214
-- **Dev Penalized BLEU**: 26.214
+| Epoch | Loss     | Average Loss | BLEU Score | Negative BLEU Score | Penalized BLEU | Dev BLEU Score |
+|-------|----------|--------------|------------|---------------------|----------------|----------------|
+| 1     | 1.4742   | 1.5799       | 48.06      | 2.71                | 2.51           | 2.51           |
+| 2     | 1.0772   | 1.1527       | 46.93      | 8.49                | 7.66           | 7.66           |
+| 3     | 1.1725   | 0.9554       | 46.98      | 10.80               | 9.76           | 9.76           |
+| 4     | 0.8185   | 0.7456       | 45.95      | 19.08               | 16.85          | 16.85          |
+| 5     | 0.4700   | 0.5236       | 42.95      | 27.81               | 22.97          | 22.97          |
+| 6     | 0.3281   | 0.3323       | 43.01      | 29.48               | 24.38          | 24.38          |
+| 7     | 0.2525   | 0.2159       | 42.29      | 32.23               | 26.21          | 26.21          |
+
 
 #### 2. **SCST with Penalized BLEU Reward**
 
@@ -278,7 +284,7 @@ After this improvement in the baseline model, we observed a significant performa
 **Model**: BART + SCST (Self-Critical Sequence Training)  
 **Method**: Reinforcement Learning with Penalized BLEU Reward  
 **Hyperparameters**:  
-- RL Epochs: 5  
+- RL Epochs: 12  
 - Learning Rate: 2e-6  
 - Lambda RL: 0.3 (mixing with MLE)  
 - Batch Size: 8  
@@ -295,6 +301,28 @@ We expect SCST to improve the model's ability to generate paraphrases by alignin
 - **Dev Penalized BLEU**  
 - **Sampled vs. Greedy Rewards** (Evaluation of exploration vs. exploitation)
 
+#### STSC-Focused RL Training (12 Epochs)
+
+| RL Epoch | BLEU (ref→hyp) | 100 − BLEU (input→hyp) | Penalized BLEU |
+|---|---:|---:|---:|
+| 1 | 39.04 | 38.15 | 28.65 |
+| 2 | 42.21 | 30.65 | 24.88 |
+| 3 | 38.13 | 40.46 | 29.67 |
+| 4 | 38.08 | 40.94 | 29.98 |
+| 5 | 31.37 | 50.51 | 30.47 |
+| 6 | 34.57 | 44.89 | 29.85 |
+| 7 | 42.45 | 29.67 | 24.22 |
+| 8 | 38.42 | 39.52 | 29.20 |
+| 9 | 39.36 | 38.25 | 28.95 |
+| 10 | 35.02 | 47.18 | 31.77 |
+| 11 | 37.99 | 39.32 | 28.72 |
+| 12 | 32.84 | 50.13 | 31.66 |
+
+- **Best Penalized BLEU:** 31.77 (Epoch 10)  
+- **Improvement:** 26.21 → 31.77 from start of RL phase  
+- **Observation:** Penalized BLEU fluctuates due to trade-off between fidelity to input and semantic divergence.
+
+
 #### 3. **Quality-Guided Reward with Optional Weights**
 
 **Task**: Paraphrase Generation  
@@ -302,7 +330,7 @@ We expect SCST to improve the model's ability to generate paraphrases by alignin
 **Method**: Reinforcement Learning with Quality-Guided Reward (Semantic, Syntactic, Lexical)  
 **Hyperparameters**:  
 - **Quality Weights**: "sem syn lex" (set via command-line arguments)  
-- **RL Epochs**: 5  
+- **RL Epochs**: 12  
 - **Learning Rate**: 2e-6  
 - **Lambda RL**: 0.3  
 - **Batch Size**: 8  
@@ -377,6 +405,37 @@ The objective of this experiment is to find the optimal combination of hyperpara
 
 <img width="1234" height="608" alt="image" src="https://github.com/user-attachments/assets/0979a4a2-4756-4cdd-a37c-80323bcee2d5" />
 
+#### Two-Phase RL Training with Weighted Quality and STSC
+
+We implemented a two-phase reinforcement learning (RL) training strategy to further optimize paraphrase generation:
+
+1. **Phase 1 – Quality-Focused RL:**  
+   - Trained for **10 epochs** using weighted rewards `[0.7, 0.2, 0.1]` corresponding to **semantic similarity, syntactic variation, and lexical variation**.  
+   - This phase prioritized high-quality paraphrase generation while maintaining syntactic and lexical diversity.
+
+2. **Phase 2 – STSC-Focused RL:**  
+   - Loaded the resulting weights from Phase 1 into the model and performed **10 more RL epochs** targeting **STSC (sentence-to-sentence consistency)**.  
+   - All epochs in both phases used **optimized hyperparameters** identified through prior HPO experiments.
+
+**Results – Penalized BLEU:**
+
+| Phase/Epoch | BLEU (ref→hyp) | 100 − BLEU (input→hyp) | Penalized BLEU |
+|---|---:|---:|---:|
+| RL Epoch 1 | 43.756 | 29.713 | 25.002 |
+| RL Epoch 2 | 40.295 | 39.688 | 30.754 |
+| RL Epoch 3 | 26.519 | 59.586 | 30.388 |
+| *RL Epoch 4 (best)* | *35.857* | *48.581* | **33.500** |
+| RL Epoch 5 | 35.669 | 48.321 | 33.146 |
+| RL Epoch 6 | 35.994 | 47.646 | 32.980 |
+
+**Observations and Possible Reasons for Improvement:**  
+- **Better penalized BLEU:** The two-phase approach led to a **peak penalized BLEU of 33.5**, higher than any previous single-phase RL run.  
+- **Quality weighting in Phase 1** allowed the model to internalize semantic fidelity while maintaining syntactic and lexical variety.  
+- **Phase 2 STSC fine-tuning** ensured stronger sentence-to-sentence consistency, improving the penalization term and stabilizing BLEU scores.  
+- **Cumulative effect:** Starting STSC training from weights already optimized for quality helped the model converge faster and more effectively than training from scratch.  
+- Overall, **progressive optimization with phased objectives and tuned hyperparameters** produced a model that balanced creativity and accuracy, yielding higher penalized BLEU.
+
+
 
 
 
@@ -386,42 +445,13 @@ The objective of this experiment is to find the optimal combination of hyperpara
 
 
 ## Results 
-Summarize all the results of your experiments in tables:
 
-| **Stanford Sentiment Treebank (SST)** | **Metric 1** |**Metric n** |
-|----------------|-----------|------- |
-|Baseline |45.23%           |...            | 
-|Improvement 1          |58.56%            |...          
-|Improvement 2        |52.11%|...|
-|...        |...|...|
-
-| **Quora Question Pairs (QQP)** | **Metric 1** |**Metric n** |
-|----------------|-----------|------- |
-|Baseline |45.23%           |...            | 
-|Improvement 1          |58.56%            |...          
-|Improvement 2        |52.11%|...|
-|...        |...|...|
-
-| **Semantic Textual Similarity (STS)** | **Metric 1** |**Metric n** |
-|----------------|-----------|------- |
-|Baseline |45.23%           |...            | 
-|Improvement 1          |58.56%            |...          
-|Improvement 2        |52.11%|...|
-|...        |...|...|
-
-| **Paraphrase Type Detection (PTD)** | **Metric 1** |**Metric n** |
-|----------------|-----------|------- |
-|Baseline |45.23%           |...            | 
-|Improvement 1          |58.56%            |...          
-|Improvement 2        |52.11%|...|
-|...        |...|...|
-
-| **Paraphrase Type Generation (PTG)** | **Metric 1** |**Metric n** |
-|----------------|-----------|------- |
-|Baseline |45.23%           |...            | 
-|Improvement 1          |58.56%            |...          
-|Improvement 2        |52.11%|...|
-|...        |...|...|
+| **Paraphrase Type Generation (PTG)**                        | **Penalized BLEU Score** |
+|-------------------------------------------------------------|--------------------------|
+| Baseline with padding masking                               | 26.21                    |
+| SCST with Penalized BLEU Reward                              | 31.77                    |
+| Quality-Guided Reward with Optional Weights                  | 52.11%                   |
+| Two-Phase RL Training with Weighted Quality and STSC        | 33.50                    |
 
 Discuss your results, observations, correlations, etc.
 
@@ -443,6 +473,10 @@ The weights for **semantic**, **syntactic**, and **lexical** components were sel
 
 
 ## Visualizations 
+<img width="989" height="590" alt="image" src="https://github.com/user-attachments/assets/5bb233bd-77c9-4300-ac88-9eed95583079" />
+<img width="845" height="574" alt="image" src="https://github.com/user-attachments/assets/96f75088-9f53-45c5-8e6b-f2cecb8a7125" />
+
+
 Add relevant graphs of your experiments here. Those graphs should show relevant metrics (accuracy, validation loss, etc.) during the training. Compare the  different training processes of your improvements in those graphs. 
 
 For example, you could analyze different questions with those plots like: 
@@ -450,21 +484,4 @@ For example, you could analyze different questions with those plots like:
 - Does Improvement B converge slower but perform better in the end? 
 - etc...
 
-## Members Contribution 
 
-**Usman Khanzada:** Implemented the paraphrase generation baseline task using BART and then introduced improvements to enhance its performance, also managed group organization
-
-**Member 2:**
-
-**Member 2:**
-
-**Member 2:**
-
-**Member 2:**
- 
-
-# AI-Usage Card
-Artificial Intelligence (AI) aided the development of this project. Please add a link to your AI-Usage card [here](https://ai-cards.org/).
-
-Rewriting my own ideas professionally and formally. Also to avoid any grammatical mistake.
-        
