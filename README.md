@@ -10,6 +10,7 @@
 -   **Group members:** 
   
 # Setup Instructions
+ Follow `setup.sh` to properly setup a conda environment and install dependencies.
 ## 5) Paraphrase Generation:
 ### 1) Install extra packages
 ```bash
