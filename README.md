@@ -92,5 +92,99 @@ python bart_generation.py \
 --seed                     Global random seed (default: 11711)
 
 ```
+# Methodology
+In this section explain what and how you did your project. 
 
+If you are unsure how this is done, check any research paper. They all describe their methods/processes. Describe briefly the ideas that you implemented to improve the model. Make sure to indicate how are you using existing ideas and extending them. We should be able to understand your project's contribution.
+
+# Experiments
+Keep track of your experiments here. What are the experiments? Which tasks and models are you considering?
+
+Write down all the main experiments and results you did, even if they didn't yield an improved performance. Bad results are also results. The main findings/trends should be discussed properly. Why a specific model was better/worse than the other?
+
+You are **required** to implement one baseline and improvement per task. Of course, you can include more experiments/improvements and discuss them. 
+
+You are free to include other metrics in your evaluation to have a more complete discussion.
+
+Be creative and ambitious.
+
+For each experiment answer briefly the questions:
+
+- What experiments are you executing? Don't forget to tell how you are evaluating things.
+- What were your expectations for this experiment?
+- What have you changed compared to the base model (or to previous experiments, if you run experiments on top of each other)?
+- What were the results?
+- Add relevant metrics and plots that describe the outcome of the experiment well. 
+- Discuss the results. Why did improvement _A_ perform better/worse compared to other improvements? Did the outcome match your expectations? Can you recognize any trends or patterns?
+
+## Results 
+Summarize all the results of your experiments in tables:
+
+| **Stanford Sentiment Treebank (SST)** | **Metric 1** |**Metric n** |
+|----------------|-----------|------- |
+|Baseline |45.23%           |...            | 
+|Improvement 1          |58.56%            |...          
+|Improvement 2        |52.11%|...|
+|...        |...|...|
+
+| **Quora Question Pairs (QQP)** | **Metric 1** |**Metric n** |
+|----------------|-----------|------- |
+|Baseline |45.23%           |...            | 
+|Improvement 1          |58.56%            |...          
+|Improvement 2        |52.11%|...|
+|...        |...|...|
+
+| **Semantic Textual Similarity (STS)** | **Metric 1** |**Metric n** |
+|----------------|-----------|------- |
+|Baseline |45.23%           |...            | 
+|Improvement 1          |58.56%            |...          
+|Improvement 2        |52.11%|...|
+|...        |...|...|
+
+| **Paraphrase Type Detection (PTD)** | **Metric 1** |**Metric n** |
+|----------------|-----------|------- |
+|Baseline |45.23%           |...            | 
+|Improvement 1          |58.56%            |...          
+|Improvement 2        |52.11%|...|
+|...        |...|...|
+
+| **Paraphrase Type Generation (PTG)** | **Metric 1** |**Metric n** |
+|----------------|-----------|------- |
+|Baseline |45.23%           |...            | 
+|Improvement 1          |58.56%            |...          
+|Improvement 2        |52.11%|...|
+|...        |...|...|
+
+Discuss your results, observations, correlations, etc.
+
+Results should have three-digit precision.
+ 
+
+### Hyperparameter Optimization 
+Describe briefly how you found your optimal hyperparameter. If you focussed strongly on Hyperparameter Optimization, you can also include it in the Experiment section. 
+
+_Note: Random parameter optimization with no motivation/discussion is not interesting and will be graded accordingly_
+
+## Visualizations 
+Add relevant graphs of your experiments here. Those graphs should show relevant metrics (accuracy, validation loss, etc.) during the training. Compare the  different training processes of your improvements in those graphs. 
+
+For example, you could analyze different questions with those plots like: 
+- Does improvement A converge faster during training than improvement B? 
+- Does Improvement B converge slower but perform better in the end? 
+- etc...
+
+## Members Contribution 
+
+**Usman Khanzada:** Implemented the paraphrase generation baseline task using BART and then introduced improvements to enhance its performance. Documented everything related to paraphrase generation in Readme.
+**Member 2:**
+**Member 2:**
+**Member 2:**
+**Member 2:**
+
+.
+
+We should be able to understand each member's contribution within 5 minutes. 
+
+# AI-Usage Card
+Artificial Intelligence (AI) aided the development of this project. Please add a link to your AI-Usage card [here](https://ai-cards.org/).
         
