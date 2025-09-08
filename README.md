@@ -116,43 +116,159 @@ R(\text{ref}, \text{inp}, \text{hyp}) = \text{BLEU}(\text{ref}, \text{hyp}) \tim
 $$
 
 We compute BLEU with **SacreBLEU** (`effective_order=True`) to mitigate length and low-count artifacts.
+
+
+## Dataset
+- We were provided with etpc-paraphrase-train.csv for training data and etpc-paraphrase-generation-test-student.csv as test data.
+- We split the training data into 80/20 to obtain the dev data.
+
+
+## Model & Data Encoding
+
+**Backbone:** `facebook/bart-large` (seq2seq)
+**Inputs:** Each example is serialized as
 ```ini
 encoder_input = sentence1  <SEP>  sentence1_segment_location  <SEP>  paraphrase_type_ids
 ```
-where <SEP> is the tokenizer’s sep_token (or </s> fallback).
+where `<SEP>` is the tokenizer’s sep_token (or </s> fallback).
 
-**Targets:** `sentence2` (gold paraphrase).
-**Padding masking:** target pads are ignored via labels `[labels == pad_id] = -100`, ensuring <pad> tokens do not contribute to the cross-entropy, otherwise there will be noise in the loss.
-### Model & Data Encoding
+- **Targets:** `sentence2` (gold paraphrase).
 
-**Backbone:** `facebook/bart-large` (seq2seq)
+- **Padding masking:** target pads are ignored via labels `[labels == pad_id] = -100`, ensuring <pad> tokens do not contribute to the cross-entropy, otherwise there will be noise in the loss.
 
-**Inputs:** each example is serialized as
+## Baseline: Supervised Fine-Tuning (MLE)
+We first fine-tune BART with standard cross-entropy on (input → target) pairs. This yields a fluent, stable initialization:
+- Optimizer: **AdamW**
+- Checkpointing: save `best_supervised_bart_model.pt` whenever dev penalized BLEU improves.
+- Rationale: MLE provides strong fluency and stabilizes the subsequent RL phase.
 
+## Improvement: Self-Critical Sequence Training (SCST) on Penalized BLEU
+We adopt **SCST** to directly optimize our task reward. For each batch:
 
+- **Greedy baseline (`greedy_decode`)**: decode deterministically (no sampling).  
+- **Sampled rollout (`sample_decode`)**: decode with exploration  
+  `do_sample=True, top_p=0.9, top_k=50, temperature=1.5, min_length=8, repetition_penalty=1.1`.  
+- **Per-sample reward**: sentence-level SacreBLEU with smoothing composed into penalized BLEU as above.  
+- **Advantage**:
+   
+  **_A = R_sample - R_greedy_**
 
+- **Policy gradient**: compute $\log p_\theta(y_{\text{sample}} \mid x)$ via teacher forcing (`sequence_logprob`) and minimize **_-A.logp_**.     
+
+#### Stability controls
+- **Loss mixing (MLE stabilizer):**  
+  _L = λ_rl · L_PG + (1 − λ_rl) · L_MLE,**λ_rl = 0.3**_
+- **Advantage normalization** with variance floor (`max(std, 0.1)`); skip PG if `std < 1e-6`.  
+- **Gradient clipping:** `clip_grad_norm_(…, 1.0)`.  
+- **Optimizer state persistence:** a single AdamW optimizer is created once in the driver and passed into each RL epoch so momentum/second-moment statistics carry across epochs.  
+
+#### Why it helps
+- The reward aligns directly with how we evaluate (faithfulness × novelty), explicitly penalizing copies.  
+- SCST’s **self-baseline** reduces variance by subtracting the greedy trajectory’s reward.  
+
+---
+
+### Optional: Quality-Guided Reward
+Inspired by [Bandel et al., 2022], we add an **optional quality-guided reward**:  
+
+- **Semantic similarity** (SacreBLEU vs. reference, proxy).  
+- **Syntactic variation** (length-difference proxy).  
+- **Lexical variation** (overlap penalty proxy).  
+
+Users set weights via `--quality_weights "sem syn lex"` or a JSON config.  
+This keeps training lightweight (no extra models) while enabling interpretable trade-offs between adequacy and diversity.  
+
+---
+
+### Hyperparameter Optimization (HPO) for RL (Optional)
+We include an Optuna (TPE) search that maximizes dev penalized BLEU over RL-critical knobs:
+
+- **Search space**  
+  - `rl_lr` ∈ [1e-7, 5e-5] (log)  
+  - `lambda_rl` ∈ [0.1, 0.7]  
+  - `rl_max_len` ∈ {40, 50, 60, 70, 80}  
+  - `rl_batch_size` ∈ {4, 8, 16}  
+
+- **Protocol**  
+  - Each trial runs short RL (`--hpo_rl_epochs`, default 1) on a deterministic subset of train for speed.  
+  - Model is reset to the pre-HPO snapshot before each trial.  
+  - We evaluate on the same dev split and let Optuna maximize the score.  
+  - After HPO, we reset to the supervised snapshot, apply best params, and run full RL for `--rl_epochs` on the full train set.  
+
+---
+
+### Evaluation & Model Selection
+- **Metric**: dev penalized BLEU (SacreBLEU, `effective_order=True`).  
+- **Consistency**: same BLEU flavor for reward (sentence-level) and reporting (corpus-level) to reduce metric drift.  
+- **Checkpointing**: save `best_bart_rl_model.pt` whenever dev penalized BLEU improves during RL; reload the best at the end.  
+
+---
+
+### Relation to Prior Work & Our Contribution
+- **Li et al., 2018 — Paraphrase Generation with Deep RL.**  
+  They train a generator plus a learned evaluator and fine-tune with the evaluator’s signal.  
+  We simplify this by using SCST with a penalized BLEU reward—no extra evaluator to train—yielding a lean, reproducible pipeline that still optimizes a task-aligned objective.  
+
+- **Bandel et al., 2022 — Quality-Guided Paraphrase Generation.**  
+  They introduce explicit control along semantic/syntactic/lexical axes.  
+  We adopt this controllability idea with a lightweight reward blend (BLEU proxy, length-variation proxy, lexical-overlap proxy) selectable via `--quality_weights`, integrating seamlessly into SCST without additional models.  
+
+**Net contribution:**  
+A practical, stable paraphrase system that:  
+1. Aligns training with evaluation via penalized BLEU.  
+2. Stabilizes RL with MLE mixing and variance guards.  
+3. Offers optional controllability with a simple, interpretable reward blend.  
+4. Includes reproducible HPO for RL-sensitive knobs.  
+
+---
+
+### Limitations & Design Trade-offs
+- Sentence-level BLEU is a proxy for semantics; excessive exploration can still drift meaning.  
+- Penalized BLEU can oscillate across RL epochs; early stopping and best-checkpoint selection mitigate this.  
+- The quality-guided proxies are lightweight (not learned quality models); they trade precision for simplicity and speed.  
+
+---
+
+### Where to Find Things in Code
+- **Data & collation**: `transform_data`, `ParaphraseRLDataset`, `rl_transform_data`  
+- **Decoding**: `greedy_decode`, `sample_decode`  
+- **Rewards**: `penalized_bleu_per_sample`, `quality_guided_reward`  
+- **PG log-probs**: `sequence_logprob`  
+- **Training loops**: `train_model` (MLE), `rl_finetune_epoch` (SCST)  
+- **Orchestration & HPO**: `finetune_paraphrase_generation` (flags: `--use_rl`, `--quality_weights`, `--hpo`, `--hpo_*`, `--rl_*`)  
 
 
 
 # Experiments
-Keep track of your experiments here. What are the experiments? Which tasks and models are you considering?
 
-Write down all the main experiments and results you did, even if they didn't yield an improved performance. Bad results are also results. The main findings/trends should be discussed properly. Why a specific model was better/worse than the other?
+In this section, we describe the key experiments executed during the development of our paraphrase generation model using reinforcement learning (RL) and Self-Critical Sequence Training (SCST). The experiments aim to evaluate the performance of different models and hyperparameter configurations.
 
-You are **required** to implement one baseline and improvement per task. Of course, you can include more experiments/improvements and discuss them. 
+#### 1. **Baseline Model: BART with Supervised Learning (MLE)**
 
-You are free to include other metrics in your evaluation to have a more complete discussion.
+**Task**: Paraphrase Generation  
+**Model**: BART (Pre-trained)  
+**Method**: Supervised training (Maximum Likelihood Estimation - MLE)  
+**Hyperparameters**:  
+- Epochs: 7  
+- Batch Size: 8  
+- Learning Rate: 1e-5  
 
-Be creative and ambitious.
+**Expectations**:  
+The baseline model is expected to generate paraphrases but will be limited by the standard MLE training, hence it is expected to copy the output from the input sentence, resulting in a low penalized BLEU score.
 
-For each experiment answer briefly the questions:
+**Initial Improvement**:  
+Initially, we performed some tweaking to the `transform` function for the baseline model. Specifically, we implemented **padding masking** where target pads are ignored during the loss computation by setting `labels[labels == pad_id] = -100`. This ensures that tokens that are padding do not contribute to the cross-entropy loss, preventing noise in the training process. 
 
-- What experiments are you executing? Don't forget to tell how you are evaluating things.
-- What were your expectations for this experiment?
-- What have you changed compared to the base model (or to previous experiments, if you run experiments on top of each other)?
-- What were the results?
-- Add relevant metrics and plots that describe the outcome of the experiment well. 
-- Discuss the results. Why did improvement _A_ perform better/worse compared to other improvements? Did the outcome match your expectations? Can you recognize any trends or patterns?
+**Changes Compared to Previous Model**:  
+- Introduced padding masking to ensure that padded tokens are excluded from loss calculations, thus improving training efficiency and reducing noise.
+
+**Results**:  
+After this improvement in the baseline model, we observed a significant performance increase, achieving a **26.214 penalized BLEU score** on the development dataset, which reflects a reasonable starting point for paraphrase generation.
+
+**Evaluation Metrics**:  
+- **Dev Penalized BLEU**: 26.214
+- **Dev Penalized BLEU**: 26.214
+- **Dev Penalized BLEU**: 26.214
 
 ## Results 
 Summarize all the results of your experiments in tables:
