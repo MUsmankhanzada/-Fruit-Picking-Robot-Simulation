@@ -473,7 +473,7 @@ The weights for **semantic**, **syntactic**, and **lexical** components were sel
 
 
 ## Visualizations 
-<img width="989" height="590" alt="image" src="https://github.com/user-attachments/assets/5bb233bd-77c9-4300-ac88-9eed95583079" />
+<img width="845" height="574" alt="image" src="https://github.com/user-attachments/assets/5bb233bd-77c9-4300-ac88-9eed95583079" />
 <img width="845" height="574" alt="image" src="https://github.com/user-attachments/assets/96f75088-9f53-45c5-8e6b-f2cecb8a7125" />
 
 
