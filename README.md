@@ -1,3 +1,14 @@
+# DNLP SS25 Final Projet
+-   **Group name:** The Tokenizers
+    
+-   **Group code:** DNLP G16
+    
+-   **Tutor responsible:** 	Frederik Hennecke
+    
+-   **Group team leader:** Muhammad Usman Khanzada
+    
+-   **Group members:** 
+  
 # Setup Instructions
 ## 5) Paraphrase Generation:
 ### 1) Install extra packages
