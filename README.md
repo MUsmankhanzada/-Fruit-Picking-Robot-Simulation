@@ -104,6 +104,24 @@ By introducing explicit control over semantic, syntactic, and lexical variations
 - **Dev Penalized BLEU**  
 - **Quality Evaluation** (Semantic, Syntactic, Lexical)
 
+| **Phase/Epoch** | **BLEU (ref→hyp)** | **100 − BLEU (input→hyp)** | **Penalized BLEU** |
+|-----------------|--------------------|----------------------------|--------------------|
+| RL Epoch 1      | 42.36              | 30.73                      | 25.04              |
+| RL Epoch 2      | 25.59              | 58.04                      | 28.56              |
+| RL Epoch 3      | 39.67              | 36.20                      | 27.61              |
+| RL Epoch 4      | 42.18              | 30.55                      | 24.78              |
+| RL Epoch 5      | 35.69              | 39.17                      | 26.88              |
+| RL Epoch 6      | 35.31              | 41.57                      | 28.23              |
+| RL Epoch 7      | 41.47              | 32.24                      | 25.71              |
+| RL Epoch 8      | 36.71              | 42.05                      | 29.69              |
+| RL Epoch 9      | 38.39              | 39.22                      | 28.96              |
+| RL Epoch 10     | 41.38              | 31.11                      | 24.75              |
+| RL Epoch 11     | 34.07              | 43.58                      | 28.56              |
+| RL Epoch 12     | 43.67              | 24.97                      | 20.97              |
+
+**RL Improved BLEU**: 26.21 → 29.69
+
+
 #### 4. **Hyperparameter Optimization (HPO) with Optuna**
 
 **Task**: Hyperparameter Tuning for SCST  
@@ -193,23 +211,17 @@ We implemented a two-phase reinforcement learning (RL) training strategy to furt
 - **Cumulative effect:** Starting STSC training from weights already optimized for quality helped the model converge faster and more effectively than training from scratch.  
 - Overall, **progressive optimization with phased objectives and tuned hyperparameters** produced a model that balanced creativity and accuracy, yielding higher penalized BLEU.
 
-  **Quality-Guided Reward with Optional Weights vs SCST with Penalized BLEU Reward** 
 
+### Quality-Guided Reward with Optional Weights vs SCST with Penalized BLEU Reward
 
+As expected, **SCST with Penalized BLEU Reward** performs better in terms of **Penalized BLEU** because it is specifically optimized for this metric. The SCST method directly maximizes **Penalized BLEU**, which leads to higher diversity in the paraphrases, as evidenced by the improvement from **26.21** (baseline) to **31.77**. This method focuses on reducing input similarity while ensuring that the generated output closely matches the reference.
 
+On the other hand, **Quality-Guided Reward with Optional Weights** focuses more on enhancing **semantic similarity** by balancing various factors like **semantic**, **syntactic**, and **lexical** variations. While it achieved a **Penalized BLEU** score of **29.69**, which is lower than SCST's **31.77**, it improved the **BLEU (ref→hyp)** score to **36.71**. However, this focus on quality and balance led to higher **100 − BLEU (input→hyp)** (42.05), suggesting that the model prioritized improving reference similarity at the expense of input diversity.
 
-# Results 
+In summary, **SCST** is tailored to improve **Penalized BLEU**, making it more effective for tasks requiring diversity and reduced input similarity. **Quality-Guided Reward**, on the other hand, emphasizes semantic quality, making it better suited for tasks where reference alignment is critical, albeit with a trade-off in diversity.
+  
 
-| **Paraphrase Type Generation (PTG)**                        | **Penalized BLEU Score** | **BLEU (ref→hyp)** | **100 − BLEU (input→hyp)** |
-|-------------------------------------------------------------|--------------------------|--------------------|----------------------------|
-| Baseline with padding masking                               | 26.21                    | 42.29              | 32.23                      |
-| SCST with Penalized BLEU Reward                              | 31.77                    | 35.02              | 47.18                      |
-| Quality-Guided Reward with Optional Weights                  |                    |               |                        |
-| Two-Phase RL Training with Weighted Quality and STSC        | 33.50                    | 35.85              | 48.58                      |
-
-
-
-## Key Takeaways
+  ## Key Takeaways
 
 ### 1. **Change in Numbers During Generation**  
 One notable observation during the evaluation of the paraphrase generation was the change in numbers within the generated sentences. Specifically, the numerical values in the original input sentence were altered in the paraphrases, even when they were expected to remain unchanged. This issue likely stemmed from the lack of high-quality paraphrasing in the model output. We hypothesize that the model’s inability to correctly retain key numerical information and other sensitive tokens might have been caused by suboptimal quality in the generated paraphrases, which are unable to preserve such specific details.
@@ -223,11 +235,45 @@ A similar trade-off was observed between the **Quality-Generated Paraphrases** a
 ### 4. **Optimal Balance Between BLEU and Penalized BLEU**  
 The experiments indicate that the best-performing models, in terms of **Penalized BLEU**, were able to strike a balance between maintaining a high similarity to the reference sentence while introducing enough variation to avoid the pitfalls of overly repetitive text generation. This balance is crucial for improving both the **BLEU** and **Penalized BLEU** scores simultaneously, making sure that paraphrases are both semantically correct and sufficiently distinct from the input text.
 
-### Conclusion  
-The key takeaway from this analysis is that paraphrase generation is a complex problem that involves balancing between **retaining important details**, **avoiding repetitive outputs**, and **introducing enough variety** to produce fluent and accurate paraphrases. Achieving the best results requires careful tuning of reward functions, attention to the trade-offs between **BLEU** and **Penalized BLEU** scores, and the integration of quality-guided models that improve semantic richness without sacrificing output accuracy.
+
+
+
+# Results 
+
+| **Paraphrase Type Generation (PTG)**                        | **Penalized BLEU Score** | **BLEU (ref→hyp)** | **100 − BLEU (input→hyp)** |
+|-------------------------------------------------------------|--------------------------|--------------------|----------------------------|
+| Baseline with padding masking                               | 26.21                    | 42.29              | 32.23                      |
+| SCST with Penalized BLEU Reward                              | 31.77                    | 35.02              | 47.18                      |
+| Quality-Guided Reward with Optional Weights                  | 29.69                   |  36.71             |  42.05                      |
+| Two-Phase RL Training with Weighted Quality and STSC        | 33.50                    | 35.85              | 48.58                      |
+
+### Results Discussion
+
+The **Paraphrase Type Generation (PTG)** experiments demonstrate how different training methods affect the **Penalized BLEU Score**, **BLEU (ref→hyp)**, and **100 − BLEU (input→hyp)**:
+
+1. **Baseline with Padding Masking (26.21 Penalized BLEU)**:
+   - The baseline achieved a **Penalized BLEU** score of **26.21**. The **BLEU (ref→hyp)** of **42.29** and **100 − BLEU (input→hyp)** of **32.23** reflect a moderate balance between reference similarity and input diversity.
+
+2. **SCST with Penalized BLEU Reward (31.77 Penalized BLEU)**:
+   - **SCST** improved the **Penalized BLEU** score to **31.77** but resulted in a lower **BLEU (ref→hyp)** of **35.02** and higher **100 − BLEU (input→hyp)** at **47.18**, showing a trade-off between diversity and semantic accuracy.
+
+3. **Quality-Guided Reward with Optional Weights (29.69 Penalized BLEU)**:
+   - This method yielded a **Penalized BLEU** score of **29.69**, slightly lower than **SCST**, but with a better **BLEU (ref→hyp)** of **36.71** and a **100 − BLEU (input→hyp)** of **42.05**. It demonstrates that weighted quality aspects can improve the model's semantic alignment but at the cost of diversity.
+
+4. **Two-Phase RL Training with Weighted Quality and STSC (33.50 Penalized BLEU)**:
+   - The **Two-Phase RL Training** method produced the highest **Penalized BLEU** score of **33.50**, with a **BLEU (ref→hyp)** of **35.85** and **100 − BLEU (input→hyp)** of **48.58**, striking a good balance between diversity and semantic quality.
+
+### Observations:
+**As already discussed in Experiments takeaways**
+- **Trade-off Between BLEU and Penalized BLEU**: As **Penalized BLEU** increases, **BLEU (ref→hyp)** tends to decrease, indicating a trade-off between semantic accuracy and diversity.
+- **Impact of Rewarding Quality Aspects**: **Quality-Guided Reward** improved reference similarity but led to a slightly lower **Penalized BLEU** than **SCST**.
+- **Two-Phase RL Training**: This method, combining broader training with **STSC** fine-tuning, achieved the best balance of diversity and semantic alignment.
+
+### Conclusion:
+
+**Two-Phase RL Training with Weighted Quality and STSC** provides the best overall results, with the highest **Penalized BLEU** score, offering an optimal balance between semantic accuracy and paraphrase diversity.  The key takeaway from this analysis is that paraphrase generation is a complex problem that involves balancing between **retaining important details**, **avoiding repetitive outputs**, and **introducing enough variety** to produce fluent and accurate paraphrases. Achieving the best results requires careful tuning of reward functions, attention to the trade-offs between **BLEU** and **Penalized BLEU** scores, and the integration of quality-guided models that improve semantic richness without sacrificing output accuracy.
 
  
-
 # Hyperparameter Optimization 
 ### Supervised Learning:
 For the baseline model, we experimented with different learning rates and epochs. Through these trials, we observed that a learning rate of **1e-5** resulted in the highest penalized BLEU score within just **7 epochs**. Beyond this point, the loss decreased at a very slow rate, and the penalized BLEU score either stagnated or showed only minimal improvement. On the other hand, using smaller learning rates required more epochs to reach the optimal score, but the training time increased significantly. This insight helped us settle on **1e-5** for the learning rate and **7 epochs** for training.
@@ -243,19 +289,45 @@ The weights for **semantic**, **syntactic**, and **lexical** components were sel
 
 
 # Visualizations 
-- **Baseline with padding masking**
+## **Baseline with padding masking**
 <img width="845" height="574" alt="image" src="https://github.com/user-attachments/assets/5bb233bd-77c9-4300-ac88-9eed95583079" />
 
-- **RL (SCST) on penalized BLEU**
+### Blue curve (Loss):
+- The average loss decreases smoothly and consistently as training progresses, indicating stable convergence.
+### Red curve (Penalized BLEU):
+- The BLEU score improves steadily as the loss decreases, showing a clear correlation between reduced loss and better performance.
+### Observation:
+- This phase shows a well-behaved supervised training stage, where the model steadily improves without much fluctuation.
+
+## **RL (SCST) on penalized BLEU**
 <img width="845" height="574" alt="image" src="https://github.com/user-attachments/assets/96f75088-9f53-45c5-8e6b-f2cecb8a7125" />
 
+### Blue curve (BLEU):
+- The BLEU score fluctuates more significantly compared to the first graph. There are ups and downs across epochs.
 
-Compare the  different training processes of your improvements in those graphs. 
+### Marked point:
+- Epoch 10 is highlighted as the best-performing epoch (~31.8 BLEU).
 
-For example, you could analyze different questions with those plots like: 
-- Does improvement A converge faster during training than improvement B? 
-- Does Improvement B converge slower but perform better in the end? 
-- etc...
+### Observation:
+- Reinforcement Learning (RL) training introduces instability in the optimization process, but it occasionally pushes the model to higher performance peaks compared to supervised training.
+
+
+## **Quality-Guided Reward with Optional Weights**
+<img width="845" height="552" alt="image" src="https://github.com/user-attachments/assets/e39b0b90-7ec3-497a-a5aa-26698865e18a" />
+
+### Key Observations:
+- The BLEU score shows moderate fluctuations with no clear upward or downward trend.
+- The highest BLEU (~29.7) is at epoch 8.
+- The score drops sharply to ~21 by epoch 12, suggesting potential overfitting or model degradation.
+
+### Conclusion:
+
+- **Supervised Training**: The graph of supervised training demonstrates a strong and stable base, with a gradual increase in performance. However, it plateaus at a lower BLEU score, suggesting the model achieves its best performance early on but struggles to improve further.
+
+- **RL (SCST) with Penalized BLEU**: The graph of RL (SCST) training shows more fluctuations and instability in performance. While it achieves higher penalized BLEU scores at certain epochs, the training process is less stable. The model occasionally pushes to higher performance peaks, but the fluctuations suggest a less predictable optimization process.
+
+- **Quality-Guided Reward with Optional Weights**: The graph of quality-guided training indicates a significant improvement in performance over the baseline, yet it exhibits the least stability. While the model performs well in terms of penalized BLEU, it faces larger fluctuations and is the least stable approach. Despite this, RL (SCST) consistently achieves higher penalized BLEU scores, showing it as the more effective strategy for this task.
+
 ## References 
 - _Paraphrase Generation with Deep Reinforcement Learning [Li, Jiang, Shang et al., 2018]_ https://aclanthology.org/D18-1421/
 - _Quality Controlled Paraphrase Generation, [Bandel et al., 2022]_ https://aclanthology.org/2022.acl-long.45/
